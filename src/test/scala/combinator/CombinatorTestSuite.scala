@@ -4,7 +4,6 @@ package combinator
 
 import chisel3._
 import chisel3.tester._
-import org.scalatest.FreeSpec
 import chisel3.experimental.BundleLiterals._
 import chisel3._
 import chisel3.tester._
@@ -15,7 +14,7 @@ import scala.language.implicitConversions
 
 object CombinatorBehvior {
   def testCombineOutSmall: Boolean = {
-    test(new Combinator) {
+    test(new Combinator4B) {
       dut =>
         for (i <- 0 to 100) {
           for (j <- 0 to 100) {
@@ -32,7 +31,7 @@ object CombinatorBehvior {
   }
 
   def testCombineOutLarge: Boolean = {
-    test(new Combinator) {
+    test(new Combinator4B) {
       dut =>
         for (i <- 543424612 to 543425148) {
           for (j <- 0 to 100) {
