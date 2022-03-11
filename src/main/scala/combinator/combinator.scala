@@ -3,9 +3,7 @@
 package combinator
 
 import chisel3._
-import chisel3._
 
-// Note ??? will compile but not work at runtime.
 
 class Combinator4B extends Module{
   val io = IO(
@@ -27,7 +25,7 @@ class Combinator64B extends Module{
       val out: Vec[UInt] = Output(Vec(8, UInt(32.W)))
     }
   )
-  val combinator4Bvec: Seq[Combinator4B] = Seq.fill(16)(Module(new Combinator4B))
+  val combinator4Bvec: Seq[Combinator4B] = Seq.fill(8)(Module(new Combinator4B))
   for (i <- 0 until 8) {
     combinator4Bvec(i).io.word1 := io.cacheLine(2 * i)
     combinator4Bvec(i).io.word2 := io.cacheLine(2 * i + 1)

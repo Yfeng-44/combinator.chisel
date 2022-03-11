@@ -18,4 +18,11 @@ class CombinatorTester extends AnyFreeSpec with ChiselScalatestTester {
     assert(CombinatorBehvior.testCombineOutLarge)
   }
 
+  "Combinator64B Should correcet the out" in {
+    assert(Combinator64BBehaviour.testCombine64B)
+  }
+
+  "GPUMemCombinator Should correctly out" in {
+    assert(GPUMemCombinatorBehaviour.testGPUMemCombinator)
+  }
 }
