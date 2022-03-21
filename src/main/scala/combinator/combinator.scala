@@ -106,7 +106,7 @@ class GPURowDisaggregator32B extends Module {
 
   for (i <- 0 until 16) {
     val masked_words = io.rowBuffer(i) & "hff00".asUInt(16.W)
-    io.out := masked_words | io.disaggregatedData(i)
+    io.out(i) := masked_words | io.disaggregatedData(i)
    }
 }
 
@@ -133,37 +133,9 @@ class GPUMemCombinator32B extends Module {
 }
 
 
-class GPUMemDisaggregator32B extends Module {
-  val io = IO(
-    new Bundle() {
-      val payload = Input(Vec(8, UInt(16.W)))
-      val out     = Output(Vec(16, UInt(16.W)))
-    }
-  )
-  for (i <- 0 until 8) {
-    io.out(2*i) := (io.payload(i) >> 8.U).asUInt
-    io.out(2*i+1) := (io.payload(i) & "h00ff".asUInt(16.W))
-  }
-}
-
-class GPURowDisaggregator32B extends Module {
-  val io = IO(
-    new Bundle() {
-      val disaggregatedData = Input(Vec(16, UInt(16.W)))
-      val rowBuffer         = Input(Vec(16, UInt(16.W)))
-      val out               = Output(Vec(16, UInt(16.W)))
-    }
-  )
-
-  for (i <- 0 until 16) {
-    val masked_words = io.rowBuffer(i) & "hff00".asUInt(16.W)
-    io.out := masked_words | io.disaggregatedData(i)
-  }
-}
-
 // To Compile the Chisel into Verilog
 import chisel3.stage.ChiselStage
 
 object GCDDriver extends App {
-  (new ChiselStage).emitVerilog(new Combinator32B, args)
+  (new ChiselStage).emitVerilog(new GPURowDisaggregator32B, args)
 }
