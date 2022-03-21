@@ -48,6 +48,25 @@ object CombinatorBehvior {
   }
 }
 
+object Combinator2BBehvior {
+  def testCombineOutSmall: Boolean = {
+    test(new Combinator2B) {
+      dut =>
+        for (i <- 0 to 100) {
+          for (j <- 0 to 100) {
+            dut.io.word1.poke(i.U(16.W))
+            dut.io.word2.poke(j.U(16.W))
+            println(i, j,(i << 16) | (j & 0x00ff))
+            dut.io.out.expect(
+              ((i << 8) | (j & 0x00ff)).U
+            )
+          }
+        }
+    }
+    true
+  }
+}
+
 object Combinator64BBehaviour {
   def testCombine64B: Boolean = {
     test(new Combinator64B) {
@@ -88,6 +107,34 @@ object GPUMemCombinatorBehaviour {
 
           val half_payloads1 = CPU_cache(i) >> 16
           val half_payloads2 = CPU_cache(i) & 0x0000ffff
+          dut.io.out(2*i).expect((half_weights1 | half_payloads1).U)
+          dut.io.out(2*i+1).expect((half_weights2 | half_payloads2).U)
+        }
+    }
+    true
+  }
+}
+object GPUMemCombinator32BBehaviour {
+  def testGPUMemCombinator: Boolean = {
+    test(new GPUMemCombinator32B) {
+      dut =>
+        val CPU_cache = Seq(52,85,1,8,3,2,7, 33, 123, 55, 11, 9, 44, 22,66, 12)
+        val GPU_cache = Seq(99, 12, 3, 199, 22, 54, 22, 44, 3, 55, 34, 12,86, 98, 0, 12)
+
+        for (i <- 0 until 8) {
+          dut.io.payload(i).poke(CPU_cache(i).U(16.W))
+        }
+
+        for (i <-0 until 16) {
+          dut.io.weights(i).poke(GPU_cache(i).U(16.W))
+        }
+        val mask = 0xff00
+        for (i <- 0 until 8) {
+          val half_weights1 = GPU_cache(i) & mask
+          val half_weights2 = GPU_cache(i) & mask
+
+          val half_payloads1 = CPU_cache(i) >> 8
+          val half_payloads2 = CPU_cache(i) & 0x00ff
           dut.io.out(2*i).expect((half_weights1 | half_payloads1).U)
           dut.io.out(2*i+1).expect((half_weights2 | half_payloads2).U)
         }

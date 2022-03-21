@@ -4,6 +4,19 @@ package combinator
 
 import chisel3._
 
+class Combinator2B extends Module{
+  val io = IO(
+    new Bundle() {
+      val word1 = Input(UInt(16.W))
+      val word2 = Input(UInt(16.W))
+      val out   = Output(UInt(16.W))
+    }
+  )
+
+  val word1_8bit = (io.word1 << 8.U).asUInt
+  val word2_8bit = io.word2 & "h00ff".asUInt(16.W)
+  io.out := word1_8bit | word2_8bit
+}
 
 class Combinator4B extends Module{
   val io = IO(
@@ -33,6 +46,21 @@ class Combinator64B extends Module{
   }
 }
 
+class Combinator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val cacheLine = Input(Vec(16, UInt(16.W)))
+      val out = Output(Vec(8, UInt(16.W)))
+    }
+  )
+  val combinator2BVec = Seq.fill(8)(Module(new Combinator2B))
+  for (i <- 0 until 8) {
+    combinator2BVec(i).io.word1 := io.cacheLine(2*i)
+    combinator2BVec(i).io.word2 := io.cacheLine(2*i+1)
+    io.out(i) := combinator2BVec(i).io.out
+  }
+}
+
 class GPUMemCombinator extends Module {
   val io = IO(
     new Bundle() {
@@ -54,10 +82,88 @@ class GPUMemCombinator extends Module {
   }
 }
 
+class GPUMemDisaggregator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val payload = Input(Vec(8, UInt(16.W)))
+      val out     = Output(Vec(16, UInt(16.W)))
+    }
+  )
+  for (i <- 0 until 8) {
+    io.out(2*i) := (io.payload(i) >> 8.U).asUInt
+    io.out(2*i+1) := (io.payload(i) & "h00ff".asUInt(16.W))
+  }
+}
+
+class GPURowDisaggregator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val disaggregatedData = Input(Vec(16, UInt(16.W)))
+      val rowBuffer         = Input(Vec(16, UInt(16.W)))
+      val out               = Output(Vec(16, UInt(16.W)))
+    }
+  )
+
+  for (i <- 0 until 16) {
+    val masked_words = io.rowBuffer(i) & "hff00".asUInt(16.W)
+    io.out := masked_words | io.disaggregatedData(i)
+   }
+}
+
+class GPUMemCombinator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val payload = Input(Vec(8, UInt(16.W)))
+      val weights = Input(Vec(16, UInt(16.W)))
+      val out     = Output(Vec(16, UInt(16.W)))
+    }
+  )
+
+  val mask = "hff00".asUInt(16.W)
+  for (i <- 0 until 8) {
+    val half_weights1 = io.weights(2*i) & mask
+    val half_weights2 = io.weights(2*i + 1) & mask
+
+    val half_payload1 = (io.payload(i) >> 8.U).asUInt // get the first 16bit and move then them to the right
+    val half_payload2 = io.payload(i) & "h00ff".asUInt(16.W) // Get the last 16 bit
+
+    io.out(2*i) := half_weights1 | half_payload1
+    io.out(2*i + 1) := half_weights2 | half_payload2
+  }
+}
+
+
+class GPUMemDisaggregator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val payload = Input(Vec(8, UInt(16.W)))
+      val out     = Output(Vec(16, UInt(16.W)))
+    }
+  )
+  for (i <- 0 until 8) {
+    io.out(2*i) := (io.payload(i) >> 8.U).asUInt
+    io.out(2*i+1) := (io.payload(i) & "h00ff".asUInt(16.W))
+  }
+}
+
+class GPURowDisaggregator32B extends Module {
+  val io = IO(
+    new Bundle() {
+      val disaggregatedData = Input(Vec(16, UInt(16.W)))
+      val rowBuffer         = Input(Vec(16, UInt(16.W)))
+      val out               = Output(Vec(16, UInt(16.W)))
+    }
+  )
+
+  for (i <- 0 until 16) {
+    val masked_words = io.rowBuffer(i) & "hff00".asUInt(16.W)
+    io.out := masked_words | io.disaggregatedData(i)
+  }
+}
 
 // To Compile the Chisel into Verilog
-//import chisel3.stage.ChiselStage
+import chisel3.stage.ChiselStage
 
-//object GCDDriver extends App {
-//  (new ChiselStage).emitVerilog(new Combinator4B, args)
-//}
+object GCDDriver extends App {
+  (new ChiselStage).emitVerilog(new Combinator32B, args)
+}

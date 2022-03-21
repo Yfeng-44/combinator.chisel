@@ -14,8 +14,13 @@ class CombinatorTester extends AnyFreeSpec with ChiselScalatestTester {
     assert(CombinatorBehvior.testCombineOutSmall)
   }
 
+
   "Combinator Should correctly calculate out for large number" in {
     assert(CombinatorBehvior.testCombineOutLarge)
+  }
+
+  "Combinator2B Should work for small" in {
+    assert(Combinator2BBehvior.testCombineOutSmall)
   }
 
   "Combinator64B Should correcet the out" in {
@@ -24,5 +29,9 @@ class CombinatorTester extends AnyFreeSpec with ChiselScalatestTester {
 
   "GPUMemCombinator Should correctly out" in {
     assert(GPUMemCombinatorBehaviour.testGPUMemCombinator)
+  }
+
+  "GPUMemCombinator32B Should correctly out" in {
+    assert(GPUMemCombinator32BBehaviour.testGPUMemCombinator)
   }
 }
